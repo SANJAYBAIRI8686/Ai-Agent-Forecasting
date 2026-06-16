@@ -15,6 +15,17 @@ export default function AgentStatus() {
     const id = localStorage.getItem("active_task_id");
     if (id) {
       setTaskId(id);
+    } else {
+      // Query server for active task
+      fetch("http://localhost:8000/api/agent/active")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.task_id) {
+            setTaskId(data.task_id.toString());
+            localStorage.setItem("active_task_id", data.task_id.toString());
+          }
+        })
+        .catch((err) => console.error("Error fetching active task:", err));
     }
   }, []);
 

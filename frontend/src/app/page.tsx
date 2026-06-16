@@ -20,6 +20,7 @@ export default function Home() {
     topStockTicker: "N/A",
   });
   const [loading, setLoading] = useState(false);
+  const [activeTaskId, setActiveTaskId] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -37,6 +38,17 @@ export default function Home() {
         }
       })
       .catch((err) => console.error("Error loading recommendations:", err));
+
+    // Check if there is an active running task in the background
+    fetch("http://localhost:8000/api/agent/active")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.task_id) {
+          setActiveTaskId(data.task_id);
+          localStorage.setItem("active_task_id", data.task_id.toString());
+        }
+      })
+      .catch((err) => console.error("Error checking active task:", err));
   }, []);
 
   const triggerAnalysis = async (sectorOrTickers: string) => {
@@ -61,6 +73,25 @@ export default function Home() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Active Task Banner */}
+      {activeTaskId && (
+        <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-6 py-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h4 className="font-extrabold text-sm flex items-center gap-2">
+              <Cpu className="h-4 w-4 animate-spin-slow text-blue-400" />
+              <span>Research Agent Active</span>
+            </h4>
+            <p className="text-xs text-slate-400 mt-1">An autonomous screening and report generation task is running in the background.</p>
+          </div>
+          <button
+            onClick={() => router.push("/agent")}
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-500/10 cursor-pointer transition-colors"
+          >
+            Monitor Logs
+          </button>
+        </div>
+      )}
+
       {/* Welcome Banner */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 glass-panel rounded-2xl glow-blue">
         <div>
@@ -74,10 +105,10 @@ export default function Home() {
         
         {/* Status Quick Widget */}
         <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl">
-          <Cpu className="h-5 w-5 text-emerald-400 animate-spin-slow" />
+          <Cpu className={`h-5 w-5 text-emerald-400 ${activeTaskId ? "animate-spin" : "animate-spin-slow"}`} />
           <div className="text-xs">
             <div className="font-semibold text-slate-200">Agent Core</div>
-            <div className="text-emerald-400 font-medium">Ready for task</div>
+            <div className="text-emerald-400 font-medium">{activeTaskId ? "Analyzing..." : "Ready for task"}</div>
           </div>
         </div>
       </div>

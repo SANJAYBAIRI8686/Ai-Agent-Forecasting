@@ -98,6 +98,14 @@ def get_task_status(task_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Task not found")
     return {"status": task.status, "current_step": task.current_step, "logs": task.logs}
 
+@router.get("/agent/active")
+def get_active_task(db: Session = Depends(get_db)):
+    task = db.query(schema.AgentTask).filter(schema.AgentTask.status.in_(["pending", "running"])).order_by(schema.AgentTask.timestamp.desc()).first()
+    if task:
+        return {"task_id": task.id, "status": task.status}
+    return {"task_id": None}
+
+
 import yfinance as yf
 
 @router.get("/stocks/{ticker}/history")
