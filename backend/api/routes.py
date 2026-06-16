@@ -39,6 +39,44 @@ def get_top_10(db: Session = Depends(get_db)):
         })
     return results
 
+@router.get("/reports")
+def get_all_reports(db: Session = Depends(get_db)):
+    reports = db.query(schema.AnalysisReport).order_by(schema.AnalysisReport.timestamp.desc()).all()
+    results = []
+    for r in reports:
+        stock = db.query(schema.Stock).filter(schema.Stock.id == r.stock_id).first()
+        if stock:
+            results.append({
+                "ticker": stock.ticker,
+                "company_name": stock.company_name,
+                "score": r.score,
+                "risk_level": r.risk_level,
+                "timestamp": str(r.timestamp.date()),
+                "id": r.id
+            })
+    return results
+
+@router.get("/stocks/{ticker}/report")
+def get_stock_report(ticker: str, db: Session = Depends(get_db)):
+    stock = db.query(schema.Stock).filter(schema.Stock.ticker == ticker.upper()).first()
+    if not stock:
+        raise HTTPException(status_code=404, detail="Stock not found")
+    
+    report = db.query(schema.AnalysisReport).filter(schema.AnalysisReport.stock_id == stock.id).order_by(schema.AnalysisReport.timestamp.desc()).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found for this stock")
+        
+    return {
+        "ticker": stock.ticker,
+        "company_name": stock.company_name,
+        "score": report.score,
+        "report_text": report.report_text,
+        "risk_level": report.risk_level,
+        "timestamp": str(report.timestamp.date())
+    }
+
+
+
 @router.post("/agent/analyze")
 def analyze_sector(sector: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     # This will trigger the agent logic in the background
