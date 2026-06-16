@@ -2,9 +2,9 @@ import os
 import requests
 import google.generativeai as genai
 from sqlalchemy.orm import Session
-from ..models import schema
-from .data_fetcher import fetch_stock_data
-from .scoring import calculate_score
+from backend.models import schema
+from backend.agent.data_fetcher import fetch_stock_data
+from backend.agent.scoring import calculate_score
 import json
 import logging
 

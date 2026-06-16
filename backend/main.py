@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .models import database, schema
-from .api import routes
+from backend.models import database, schema
+from backend.api import routes
 from dotenv import load_dotenv
 
 load_dotenv()

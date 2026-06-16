@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from .database import Base
+from backend.models.database import Base
 import datetime
 
 class Stock(Base):

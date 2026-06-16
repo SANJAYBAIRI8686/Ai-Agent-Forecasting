@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from ..models.database import get_db
-from ..models import schema
+from backend.models.database import get_db
+from backend.models import schema
 from pydantic import BaseModel
 from typing import List
-from ..agent.workflow import run_agent_workflow
+from backend.agent.workflow import run_agent_workflow
 
 router = APIRouter()
 
@@ -12,8 +12,8 @@ class StockResponse(BaseModel):
     ticker: str
     company_name: str
     sector: str
-    latest_price: float
-    market_cap: float
+    latest_price: float | None = None
+    market_cap: float | None = None
 
     class Config:
         from_attributes = True
