@@ -27,36 +27,36 @@ export default function Header() {
   };
 
   return (
-    <header className="h-16 border-b border-slate-800 bg-slate-900/50 backdrop-blur flex items-center justify-between px-8 text-slate-300 ml-64">
-      {/* Search Bar */}
-      <form onSubmit={handleSearch} className="relative w-96">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+    <header className="h-20 border-b border-slate-900/60 bg-slate-950/20 backdrop-blur-md flex items-center justify-between px-8 text-slate-300 ml-64 z-20">
+      {/* Search Input Bar */}
+      <form onSubmit={handleSearch} className="relative w-96 group">
+        <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
         <input
           type="text"
-          placeholder="Search ticker symbol (e.g. AAPL, NVDA)..."
+          placeholder="Lookup ticker (e.g. AAPL, TSLA, NVDA)..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-slate-800/60 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+          className="w-full bg-slate-900/40 border border-slate-800/80 rounded-xl pl-11 pr-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-100 placeholder-slate-650 focus:outline-none focus:border-emerald-500/50 focus:bg-slate-900/90 focus:ring-1 focus:ring-emerald-500/30 transition-all duration-300 shadow-inner"
         />
       </form>
 
       {/* Backend Status Indicator */}
-      <div className="flex items-center space-x-3 text-sm font-medium">
-        <span className="text-slate-500 text-xs">Agent Server:</span>
-        <div className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+      <div className="flex items-center space-x-3.5 text-xs font-bold uppercase tracking-wider">
+        <span className="text-slate-500">Agent Core:</span>
+        <div className={`flex items-center space-x-2 px-4 py-1.5 rounded-full text-[10px] font-black border transition-all duration-500 ${
           backendStatus === "connected" 
-            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
-            : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 glow-emerald" 
+            : "bg-rose-500/10 text-rose-400 border-rose-500/20"
         }`}>
           {backendStatus === "connected" ? (
             <>
               <Wifi className="h-3 w-3 animate-pulse" />
-              <span>Online</span>
+              <span>ONLINE</span>
             </>
           ) : (
             <>
               <WifiOff className="h-3 w-3" />
-              <span>Offline</span>
+              <span>OFFLINE</span>
             </>
           )}
         </div>
