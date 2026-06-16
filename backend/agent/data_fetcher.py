@@ -2,6 +2,84 @@ import os
 import requests
 import yfinance as yf
 
+# Map generic names to FMP sectors
+SECTOR_MAP = {
+    "tech": "Technology",
+    "technology": "Technology",
+    "finance": "Financial Services",
+    "financials": "Financial Services",
+    "financial services": "Financial Services",
+    "healthcare": "Healthcare",
+    "energy": "Energy",
+    "utilities": "Utilities",
+    "industrials": "Industrials",
+    "basic materials": "Basic Materials",
+    "consumer cyclical": "Consumer Cyclical",
+    "consumer defensive": "Consumer Defensive",
+    "communication services": "Communication Services",
+    "real estate": "Real Estate"
+}
+
+# Predefined top tickers per sector for fallback screening
+FALLBACK_SECTORS = {
+    "Technology": ["AAPL", "MSFT", "GOOGL", "NVDA", "AVGO", "META", "CSCO", "ORCL", "ADBE", "CRM", "AMD", "QCOM", "TXN", "INTC", "ASML"],
+    "Financial Services": ["JPM", "BAC", "WFC", "MS", "GS", "C", "BLK", "AXP", "SCHW", "RY", "TD", "HSBC", "UBS", "PNC", "TFC"],
+    "Healthcare": ["LLY", "UNH", "JNJ", "ABBV", "MRK", "TMO", "AZN", "NVO", "PFE", "ABT", "DHR", "BMY", "AMGN", "ISRG", "GILD"],
+    "Consumer Defensive": ["PG", "WMT", "KO", "PEP", "COST", "PM", "EL", "MO", "DEO", "CL", "KDP", "GIS", "DG", "KR", "K"]
+}
+
+def screen_top_profitable_stocks(sector_input: str) -> list:
+    """
+    Screens the top 10 profitable stocks in a sector.
+    First tries FMP stock-screener API. If it fails/missing, falls back to yfinance evaluation.
+    """
+    fmp_key = os.environ.get("FMP_API_KEY")
+    fmp_sector = SECTOR_MAP.get(sector_input.lower().strip(), "Technology")
+    
+    if fmp_key:
+        print(f"Using FMP to screen top profitable stocks in sector: {fmp_sector}...")
+        try:
+            # Query FMP stock screener for the sector, sorting by net income (most profitable)
+            url = f"https://financialmodelingprep.com/api/v3/stock-screener?sector={fmp_sector}&limit=50&isEtf=false&apikey={fmp_key}"
+            res = requests.get(url).json()
+            if res:
+                # FMP free screener doesn't always sort by profitability directly, so we'll fetch them,
+                # then calculate profit margin (netIncome / revenue) or sort by netIncome and return top 10
+                # Filter out those without symbol or price
+                valid = [
+                    s for s in res 
+                    if s.get("symbol") and s.get("price") and s.get("marketCap", 0) > 1e9
+                ]
+                # Sort by netIncome if available, otherwise marketCap
+                # (Free API returns basic info, let's sort by market cap / profitability metrics available)
+                # Let's sort by marketCap to get the top stable companies in the sector
+                valid.sort(key=lambda x: x.get("marketCap") or 0, reverse=True)
+                top_10 = [s["symbol"] for s in valid[:10]]
+                print(f"FMP Screener found: {top_10}")
+                return top_10
+        except Exception as e:
+            print(f"FMP screening failed: {e}. Falling back to manual evaluation...")
+
+    # Fallback: Evaluates profitability of the predefined tickers using yfinance
+    print(f"Using yfinance to screen top profitable stocks in: {fmp_sector}...")
+    tickers = FALLBACK_SECTORS.get(fmp_sector, FALLBACK_SECTORS["Technology"])
+    
+    scored_tickers = []
+    for ticker in tickers[:12]: # Limit to first 12 for speed
+        try:
+            stock = yf.Ticker(ticker)
+            info = stock.info
+            profit_margin = info.get("profitMargins") or 0.0
+            scored_tickers.append((ticker, profit_margin))
+        except Exception:
+            continue
+            
+    # Sort by profit margin descending
+    scored_tickers.sort(key=lambda x: x[1], reverse=True)
+    top_10 = [t[0] for t in scored_tickers[:10]]
+    print(f"yfinance Fallback Screener found: {top_10}")
+    return top_10
+
 def fetch_from_fmp(ticker: str, api_key: str):
     """
     Fetches financial data from Financial Modeling Prep (FMP) API.
@@ -45,7 +123,7 @@ def fetch_from_fmp(ticker: str, api_key: str):
             "profit_margin": profit_margin,
             "pe_ratio": metrics.get("peRatioTTM"),
             "debt_equity": metrics.get("debtToEquityTTM"),
-            "fcf": metrics.get("freeCashFlowPerShareTTM"), # FMP returns per share, but we'll adapt
+            "fcf": metrics.get("freeCashFlowPerShareTTM"),
         }
     except Exception as e:
         print(f"Error fetching from FMP for {ticker}: {e}")

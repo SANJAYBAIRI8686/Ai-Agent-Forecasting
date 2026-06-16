@@ -79,27 +79,17 @@ def get_stock_report(ticker: str, db: Session = Depends(get_db)):
 
 @router.post("/agent/analyze")
 def analyze_sector(sector: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    # This will trigger the agent logic in the background
-    # For now we create an agent task
+    # Create an agent task to track execution
     task = schema.AgentTask(status="pending", current_step="Initializing")
     db.add(task)
     db.commit()
     db.refresh(task)
     
-    # Simple hardcoded tickers for educational purposes based on sector
-    # In a real app we'd fetch stocks by sector from yfinance or an API
-    tickers = []
-    if sector.lower() == "tech":
-        tickers = ["AAPL", "MSFT", "GOOGL", "NVDA"]
-    elif sector.lower() == "finance":
-        tickers = ["JPM", "BAC", "WFC"]
-    else:
-        # Default to user input as a comma-separated list of tickers
-        tickers = [t.strip().upper() for t in sector.split(",")]
-
-    background_tasks.add_task(run_agent_workflow, db, task.id, tickers)
+    # Pass the sector or tickers input string directly to the workflow
+    background_tasks.add_task(run_agent_workflow, db, task.id, sector)
     
     return {"message": "Analysis started", "task_id": task.id}
+
 
 @router.get("/agent/status/{task_id}")
 def get_task_status(task_id: int, db: Session = Depends(get_db)):
